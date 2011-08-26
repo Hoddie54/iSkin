@@ -1,0 +1,12 @@
+name: iSkin
+main: com.iCode.iskin.iSkin
+version: 1.0
+authors: [Hoddie54, thehutch]
+description: Changes player's skin using SpoutCraft
+softdepend: [Spout]
+commands:
+    iskin:        
+        description: Reloads iDisplay
+        usage: /<command> help
+
+           
