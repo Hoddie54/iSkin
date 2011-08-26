@@ -18,93 +18,170 @@ import org.getspout.spoutapi.player.SpoutPlayer;
 
 public class iSkin extends JavaPlugin{
 
+	
 	Logger log = Logger.getLogger("Minecraft");
 	protected Configuration config;
 	
 	public void onEnable(){
 	
-		
-		
+		setupConfig();
 		PluginManager pm = getServer().getPluginManager();
-		pm.registerEvent(Type.CUSTOM_EVENT, new iSkinSpoutListener(this), Priority.Normal, this); //Register Events
-		
-		makeConfig();
-		
-		
-		config.setHeader("#iSkin Configuration file");
-		config.setProperty("skinlist.test.url", "http://www.minecraft.net/skin/Hoddie54.png");
-		config.setProperty("players.test.url", "http://www.minecraft.net/skin/Hoddie54.png");
-		config.save();
-		
-		//Make default examples
+		pm.registerEvent(Type.CUSTOM_EVENT, new iSkinSpoutListener(this), Priority.Normal, this);
+
 	}
 	
 	public void onDisable(){
-		log.severe("NOOB Y U CLOSE OUR PLUGIN. BACON");
+		log.severe("[iSkin] is being shut down by admin trololol!");
 	}
 	
-    public boolean onCommand(CommandSender sender, Command cmd, String aliases, String[] args){
-		
-		if(cmd.getName().equalsIgnoreCase("iskin") && (sender.hasPermission("iSkin.reload") || sender.isOp())){
-			
-			if(args.length == 0) return false;
-			if(args[0].equalsIgnoreCase("help")) {sender.sendMessage("Type /iskin reload to reload the config"); return true;}
-			if(!args[0].equalsIgnoreCase("reload")) return false; //Handling commands
-			
-			log.info("[iSkin] Initiating Plugin Reload");
-			config = getConfiguration();
-			config.load(); //Reloads configuration file
-			
-			
-			Player[] pl = getServer().getOnlinePlayers();
-			
-			for(int i = 0; i < pl.length; i++){	
-				
-				SpoutPlayer sp = (SpoutPlayer) pl[i];
-				if(!sp.isSpoutCraftEnabled()){
-					continue;
-		    }
-				
-            Event ev = new SpoutCraftEnableEvent(sp);
-	        getServer().getPluginManager().callEvent(ev); //Call the SpoutCraftEnable Event for every SpoutPlayer
-	        
-		}
-			log.info("[iSkin] Reload Successful");
-			sender.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.GREEN+"iSkin"+ChatColor.DARK_RED+"] has been reloaded");
-			
-			return true;
-	}
-		
-		return false;
-}
-	
-	
-
-	private void makeConfig(){
+	public void setupConfig() {
 		
 		config = getConfiguration();
+		config.setHeader("#iSkin Configuration file");
+		config.getString("skinlist.test.url", "http://www.minecraft.net/skin/Hoddie54.png");
+		config.getString("players.test.url", "http://www.minecraft.net/skin/Hoddie54.png");
+		config.save();		
 	}
-	
+    public boolean onCommand(CommandSender cs, Command cmd, String aliases, String[] args){
+		
+		if((cmd.getName().equalsIgnoreCase("iskin") && (cs.hasPermission("iSkin.reload") || cs.isOp()))) {
+			
+			if(args.length == 0) {
+				return false;
+			}
+			/*
+			 * reload command
+			 */
+		if(args[0].equalsIgnoreCase("reload")) {
+				
+				log.info("initiating plugin reload...");
+				config = getConfiguration();
+				config.load();
+				
+				Player[] pl = getServer().getOnlinePlayers();
+				
+				for(int i=0; i < pl.length; i++) {
+					
+					SpoutPlayer sp = (SpoutPlayer)pl[i];
+					if(!sp.isSpoutCraftEnabled()) {
+						continue;
+					}
+					Event ev = new SpoutCraftEnableEvent(sp);
+						getServer().getPluginManager().callEvent(ev); //Calls this event
+				}
+				log.info("reload successful");
+				cs.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.GREEN+"MCHardcore"+ChatColor.DARK_RED+"] has been reloaded");
+				
+			return true;
+			}
+		/*
+		 * help command
+		 */
+		else if ((args[0].equalsIgnoreCase("help")) && (cs.hasPermission("iskin.help") || cs.isOp())) {
+			
+			cs.sendMessage(ChatColor.GOLD+"-----------iSkin-----------");
+			cs.sendMessage(ChatColor.GREEN+"/iskin setself [url]");
+			cs.sendMessage(ChatColor.GREEN+"/iskin setgroup [name] [url]");
+			cs.sendMessage(ChatColor.GREEN+"/iskin setplayer [name] [url]");
+			cs.sendMessage(ChatColor.GOLD+"Created by iCode");
+				return true;
+		}
+		/*
+		 * setself command
+		 */
+		else if ((args[0].equalsIgnoreCase("setself")) && (cs.hasPermission("iskin.setself") || cs.isOp())) {
+			
+			if (args.length !=2) {
+				return false;
+			}
+			Player player = (Player)cs;
+			String url = args[1];
+			
+		if (!url.endsWith(".png")) {
+			player.sendMessage(ChatColor.RED+"URL must end with .png");
+			return false;
+		}
+		config.setProperty("players." + player.getName() + ".url", url);
+		config.save();
+		checkSpoutEnabled(cs);
+			return true;
+	}
+		/*
+		 * setplayer command
+		 */
+		else if ((args[0].equalsIgnoreCase("setplayer") && (cs.hasPermission("iskin.setplayer") || cs.isOp()))) {
+			
+			if (args.length !=3) {
+				return false;
+			}
+			
+			Player player = (Player)cs;
+			String playerName = args[1];
+			String url = args[2];
+			
+		if (!url.endsWith(".png")) {
+			player.sendMessage(ChatColor.RED+"URL must end with .png");
+			return false;
+		}
+		config.setProperty("players." + playerName + ".url", url);
+		config.save();
+		checkSpoutEnabled(cs);
+			return true;
+		}
+		
+		/*
+		 * setgroup command
+		 */
+		else if ((args[0].equalsIgnoreCase("setgroup")) && (cs.hasPermission("iskin.setgroup") || cs.isOp())) {
+			if (args.length !=3) {
+				return false;
+			}
+			Player player = (Player)cs;
+			String groupName = args[1];
+			String url = args[2];
+			
+		if (!url.endsWith(".png")) {
+			player.sendMessage(ChatColor.RED+"URL must end with .png");
+			return false;
+		}
+		config.setProperty("skinlist."+ groupName + ".url", url);
+		config.save();
+		checkSpoutEnabled(cs);
+			return true;
+		}
+	}
+		return false;
+}	
+		
 	public String forceSkin(Player player){
-		
-		//Insert pun about method name
-		
+
 		List<String> a = config.getKeys("skinlist");
 	    
 		if(a == null || a.size() < 1){
-			return null; //Returns nothing if the player has not been forced.
+			return null; 
+			//Returns nothing if the player has not been forced.
 		}
-		
 		for(int i = 0; i < a.size(); i++){
 			
 			String skinname = a.get(i);
 			String url = config.getString("skinlist." + skinname + ".url", "http://www.minecraft.net/skin/" + player.getName() + ".png");
 			
-			if(player.hasPermission("iskin." + skinname) && !player.hasPermission("*")) return url; //Gets the URL for that skinlist
-			
+			if(player.hasPermission("iskin." + skinname) && !player.hasPermission("*")) return url; 
+			//Gets the URL for that skinlist
 		}
-		
 		return null;
 	}
 	
+	public void checkSpoutEnabled(CommandSender cs) {
+		
+		Player[] pl = getServer().getOnlinePlayers();
+		   for(int i = 0; i < pl.length; i++){ 
+			    SpoutPlayer sp = (SpoutPlayer) pl[i];
+			    if(!sp.isSpoutCraftEnabled()){
+			     continue;
+			}
+			 Event ev = new SpoutCraftEnableEvent(sp);
+			 	getServer().getPluginManager().callEvent(ev);
+	    }
+	}
 }
